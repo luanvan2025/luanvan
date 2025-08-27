@@ -1,0 +1,387 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model addresses {
+  id             Int                     @id @default(autoincrement())
+  user_id        Int
+  full_name      String?                 @db.VarChar(255)
+  phone          String?                 @db.VarChar(20)
+  street_address String?                 @db.VarChar(255)
+  ward           String?                 @db.VarChar(100)
+  district       String?                 @db.VarChar(100)
+  city           String?                 @db.VarChar(100)
+  postal_code    String?                 @db.VarChar(20)
+  address_type   addresses_address_type?
+  is_default     Boolean?
+  is_note        String?                 @db.Text
+  created_at     DateTime?               @db.DateTime(0)
+  updated_at     DateTime?               @db.DateTime(0)
+  users          users                   @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "fk_addresses_user")
+  orders         orders[]
+
+  @@index([user_id], map: "fk_addresses_user")
+}
+
+model banners {
+  id         Int       @id @default(autoincrement())
+  title      String?   @db.VarChar(255)
+  image_url  String?   @db.VarChar(500)
+  link_url   String?   @db.VarChar(500)
+  is_active  Boolean?  @default(true)
+  start_date DateTime? @db.DateTime(0)
+  end_date   DateTime? @db.DateTime(0)
+  created_at DateTime? @db.DateTime(0)
+  updated_at DateTime? @db.DateTime(0)
+}
+
+model brands {
+  id         Int        @id @default(autoincrement())
+  name       String?
+  country    String?    @db.VarChar(100)
+  created_at DateTime?  @db.DateTime(0)
+  updated_at DateTime?  @db.DateTime(0)
+  products   products[]
+}
+
+model cart_items {
+  id                 Int              @id @default(autoincrement())
+  cart_id            Int
+  product_variant_id Int
+  quantity           Int?
+  created_at         DateTime?        @db.DateTime(0)
+  updated_at         DateTime?        @db.DateTime(0)
+  carts              carts            @relation(fields: [cart_id], references: [id], onDelete: Cascade, map: "fk_cartitems_cart")
+  product_variants   product_variants @relation(fields: [product_variant_id], references: [id], onDelete: Cascade, map: "fk_cartitems_variant")
+
+  @@index([cart_id], map: "fk_cartitems_cart")
+  @@index([product_variant_id], map: "fk_cartitems_variant")
+}
+
+model carts {
+  id         Int          @id @default(autoincrement())
+  user_id    Int          @unique(map: "uq_cart_user")
+  created_at DateTime?    @db.DateTime(0)
+  updated_at DateTime?    @db.DateTime(0)
+  cart_items cart_items[]
+  users      users        @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "fk_carts_user")
+}
+
+model categories {
+  id         Int        @id @default(autoincrement())
+  name       String?    @unique(map: "name")
+  quantity   Int?
+  created_at DateTime?  @db.DateTime(0)
+  updated_at DateTime?  @db.DateTime(0)
+  products   products[]
+}
+
+model coupon_usage {
+  id        Int       @id @default(autoincrement())
+  coupon_id Int
+  user_id   Int
+  order_id  Int
+  used_at   DateTime? @db.DateTime(0)
+  coupons   coupons   @relation(fields: [coupon_id], references: [id], onDelete: Cascade, map: "fk_cusage_coupon")
+  orders    orders    @relation(fields: [order_id], references: [id], onDelete: Cascade, map: "fk_cusage_order")
+  users     users     @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "fk_cusage_user")
+
+  @@unique([coupon_id, user_id, order_id], map: "uq_coupon_user_order")
+  @@index([order_id], map: "fk_cusage_order")
+  @@index([user_id], map: "fk_cusage_user")
+}
+
+model coupons {
+  id              Int                    @id @default(autoincrement())
+  code            String?                @unique(map: "code") @db.VarChar(50)
+  discount_type   coupons_discount_type?
+  discount_value  Decimal?               @db.Decimal(15, 2)
+  quantity        Int?
+  start_date      DateTime?              @db.DateTime(0)
+  end_date        DateTime?              @db.DateTime(0)
+  usage_limit     Int?
+  min_order_value Decimal?               @db.Decimal(15, 2)
+  product_id      Int?
+  is_active       Boolean?
+  created_at      DateTime?              @db.DateTime(0)
+  updated_at      DateTime?              @db.DateTime(0)
+  coupon_usage    coupon_usage[]
+  products        products?              @relation(fields: [product_id], references: [id], map: "fk_coupons_product")
+
+  @@index([product_id], map: "fk_coupons_product")
+}
+
+model favorites {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  product_id Int
+  created_at DateTime? @db.DateTime(0)
+  updated_at DateTime? @db.DateTime(0)
+  products   products  @relation(fields: [product_id], references: [id], onDelete: Cascade, map: "fk_favorites_product")
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "fk_favorites_user")
+
+  @@unique([user_id, product_id], map: "uq_favorites_user_product")
+  @@index([product_id], map: "fk_favorites_product")
+}
+
+model order_items {
+  id                 Int              @id @default(autoincrement())
+  order_id           Int
+  product_variant_id Int
+  quantity           Int?
+  price              Decimal?         @db.Decimal(15, 2)
+  total_price        Decimal?         @db.Decimal(15, 2)
+  created_at         DateTime?        @db.DateTime(0)
+  updated_at         DateTime?        @db.DateTime(0)
+  orders             orders           @relation(fields: [order_id], references: [id], onDelete: Cascade, map: "fk_orderitems_order")
+  product_variants   product_variants @relation(fields: [product_variant_id], references: [id], map: "fk_orderitems_variant")
+
+  @@index([order_id], map: "fk_orderitems_order")
+  @@index([product_variant_id], map: "fk_orderitems_variant")
+}
+
+model orders {
+  id                  Int                    @id @default(autoincrement())
+  user_id             Int
+  shipping_address_id Int?
+  tracking_code       String?                @db.VarChar(255)
+  total_amount        Decimal?               @db.Decimal(15, 2)
+  order_status        orders_order_status?   @default(pending)
+  payment_method      orders_payment_method?
+  shipping_method_id  Int?
+  is_note             String?                @db.Text
+  cancel_reason       String?                @db.Text
+  created_at          DateTime?              @db.DateTime(0)
+  updated_at          DateTime?              @db.DateTime(0)
+  coupon_usage        coupon_usage[]
+  order_items         order_items[]
+  addresses           addresses?             @relation(fields: [shipping_address_id], references: [id], map: "fk_orders_address")
+  shipping_methods    shipping_methods?      @relation(fields: [shipping_method_id], references: [id], map: "fk_orders_shipping")
+  users               users                  @relation(fields: [user_id], references: [id], map: "fk_orders_user")
+  payments            payments[]
+
+  @@index([shipping_address_id], map: "fk_orders_address")
+  @@index([shipping_method_id], map: "fk_orders_shipping")
+  @@index([user_id], map: "fk_orders_user")
+}
+
+model password_resets {
+  id         Int       @id @default(autoincrement())
+  user_id    Int       @unique
+  otp_code   String?   @db.VarChar(255)
+  expired_at DateTime? @db.DateTime(0)
+  used       Boolean?
+  created_at DateTime? @db.DateTime(0)
+  updated_at DateTime? @db.DateTime(0)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "fk_pwreset_user")
+
+  @@index([user_id], map: "fk_pwreset_user")
+}
+
+model payments {
+  id             Int                      @id @default(autoincrement())
+  order_id       Int
+  payment_method payments_payment_method?
+  payment_status payments_payment_status? @default(pending)
+  paid_at        DateTime?                @db.DateTime(0)
+  amount         Decimal?                 @db.Decimal(15, 2)
+  transaction_id String                   @unique(map: "transaction_id")
+  created_at     DateTime?                @db.DateTime(0)
+  orders         orders                   @relation(fields: [order_id], references: [id], map: "fk_payments_order")
+
+  @@index([order_id], map: "fk_payments_order")
+}
+
+model product_comments {
+  id         Int       @id @default(autoincrement())
+  product_id Int
+  user_id    Int
+  comment    String?   @db.Text
+  created_at DateTime? @db.DateTime(0)
+  updated_at DateTime? @db.DateTime(0)
+  products   products  @relation(fields: [product_id], references: [id], onDelete: Cascade, map: "fk_comments_product")
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "fk_comments_user")
+
+  @@index([product_id], map: "fk_comments_product")
+  @@index([user_id], map: "fk_comments_user")
+}
+
+model product_images {
+  id         Int       @id @default(autoincrement())
+  product_id Int
+  image_url  String?   @db.VarChar(500)
+  public_id  String?   @db.VarChar(255)
+  created_at DateTime? @db.DateTime(0)
+  updated_at DateTime? @db.DateTime(0)
+  products   products  @relation(fields: [product_id], references: [id], onDelete: Cascade, map: "fk_images_product")
+
+  @@index([product_id], map: "fk_images_product")
+}
+
+model product_ratings {
+  id         Int       @id @default(autoincrement())
+  product_id Int
+  user_id    Int
+  rating     Int?
+  created_at DateTime? @db.DateTime(0)
+  updated_at DateTime? @db.DateTime(0)
+  products   products  @relation(fields: [product_id], references: [id], onDelete: Cascade, map: "fk_ratings_product")
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "fk_ratings_user")
+
+  @@unique([product_id, user_id], map: "uq_rating_product_user")
+  @@index([user_id], map: "fk_ratings_user")
+}
+
+model product_variants {
+  id              Int           @id @default(autoincrement())
+  product_id      Int
+  price           Decimal?      @db.Decimal(15, 2)
+  discount_price  Decimal?      @db.Decimal(15, 2)
+  stock           Int?
+  color           String?       @db.VarChar(50)
+  size            String?       @db.VarChar(50)
+  capacity        String?       @db.VarChar(50)
+  power           String?       @db.VarChar(50)
+  material        String?       @db.VarChar(100)
+  voltage         String?       @db.VarChar(50)
+  weight          String?       @db.VarChar(50)
+  dimensions      String?       @db.VarChar(100)
+  warranty        String?       @db.VarChar(50)
+  energy_class    String?       @db.VarChar(50)
+  functions_text  String?       @db.Text
+  intended_use    String?       @db.VarChar(100)
+  safety_features String?       @db.Text
+  created_at      DateTime?     @db.DateTime(0)
+  updated_at      DateTime?     @db.DateTime(0)
+  cart_items      cart_items[]
+  order_items     order_items[]
+  products        products      @relation(fields: [product_id], references: [id], onDelete: Cascade, map: "fk_variants_product")
+
+  @@index([product_id], map: "fk_variants_product")
+}
+
+model products {
+  id               Int                @id @default(autoincrement())
+  category_id      Int?
+  brand_id         Int?
+  name             String?            @db.VarChar(255)
+  image            String?            @db.VarChar(200)
+  product_public_id  String?            @db.VarChar(200)
+  status           products_status?
+  description      String?            @db.Text
+  created_at       DateTime?          @db.DateTime(0)
+  updated_at       DateTime?          @db.DateTime(0)
+  coupons          coupons[]
+  favorites        favorites[]
+  product_comments product_comments[]
+  product_images   product_images[]
+  product_ratings  product_ratings[]
+  product_variants product_variants[]
+  brands           brands?            @relation(fields: [brand_id], references: [id], map: "fk_products_brand")
+  categories       categories?        @relation(fields: [category_id], references: [id], map: "fk_products_category")
+
+  @@index([brand_id], map: "fk_products_brand")
+  @@index([category_id], map: "fk_products_category")
+}
+
+model shipping_methods {
+  id             Int                         @id @default(autoincrement())
+  name           String?                     @db.VarChar(255)
+  description    String?                     @db.Text
+  provider       String?                     @db.VarChar(100)
+  tracking_url   String?                     @db.VarChar(500)
+  cost           Decimal?                    @db.Decimal(15, 2)
+  estimated_days Int?
+  is_active      shipping_methods_is_active?
+  created_at     DateTime?                   @db.DateTime(0)
+  updated_at     DateTime?                   @db.DateTime(0)
+  orders         orders[]
+}
+
+model users {
+  id               Int                @id @default(autoincrement())
+  email            String             @unique(map: "email")
+  password         String?            @db.VarChar(255)
+  name             String?            @db.VarChar(255)
+  avatar           String?            @db.VarChar(255)
+  avatar_public_id String?            @db.VarChar(255)
+  phone            String?            @db.VarChar(20)
+  is_active        users_is_active?   @default(active)
+  role             users_role?        @default(user)
+  google_id        String?            @unique(map: "google_id")
+  last_login       DateTime?          @db.DateTime(0)
+  date_of_birth    DateTime?          @db.Date
+  created_at       DateTime?          @db.DateTime(0)
+  updated_at       DateTime?          @db.DateTime(0)
+  addresses        addresses[]
+  carts            carts?
+  coupon_usage     coupon_usage[]
+  favorites        favorites[]
+  orders           orders[]
+  password_resets  password_resets[]
+  product_comments product_comments[]
+  product_ratings  product_ratings[]
+}
+
+enum coupons_discount_type {
+  percent
+  amount
+}
+
+enum payments_payment_method {
+  cash
+  paypal
+  momo
+  vnpay
+}
+
+enum payments_payment_status {
+  pending
+  paid
+  failed
+  refunded
+}
+
+enum orders_order_status {
+  pending
+  processing
+  shipped
+  delivered
+  cancelled
+}
+
+enum products_status {
+  in_stock
+  out_of_stock
+}
+
+enum orders_payment_method {
+  COD
+  MOMO
+  VNPAY
+}
+
+enum users_is_active {
+  active
+  inactive
+}
+
+enum shipping_methods_is_active {
+  active
+  inactive
+}
+
+enum users_role {
+  user
+  admin
+}
+
+enum addresses_address_type {
+  home
+  office
+}
