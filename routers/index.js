@@ -9,6 +9,8 @@ import productVariantRoutes from "./productVariant.router.js";
 import productImageRoutes from "./productImage.router.js";
 import cartRouter from "./cart.router.js";
 import favoriteRouter from "./favorite.router.js";
+import productCommentRouter from './productcomments.router.js';
+import orderRouter from './order.router.js';
 
 const setupRoutes = (app) => {
   app.use('/api/v1/auth', authRouter);
@@ -22,6 +24,8 @@ const setupRoutes = (app) => {
   app.use("/api/v1/product-images", productImageRoutes);
   app.use("/api/v1/cart", cartRouter);
   app.use("/api/v1/favorites", favoriteRouter);
+  app.use("/api/v1/product-comments", productCommentRouter);
+  app.use("/api/v1/order", orderRouter);
 
 };
 
