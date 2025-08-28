@@ -10,4 +10,4 @@ router.put("/update", updateProductComment)
 router.delete("/:id", getProductComment)
 router.get("/search", searchProductComments)
 
-export default productCommentRouter
+export default productCommentRouter 
